@@ -1,126 +1,97 @@
-﻿static void ProcessData(object data)
-{
-    Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started.");
-    // Імітація обробки великих об'ємів даних
-    Thread.Sleep(5000);
-    Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished.");
-}
+﻿using System;
+using System.Reflection;
 
-static void ParallelProcessing()
+namespace ReflectionExample
 {
-    Console.WriteLine("Processing started.");
-
-    int[] data = new int[1000];
-    Random rand = new Random();
-    for (int i = 0; i < data.Length; i++)
+    class Program
     {
-        data[i] = rand.Next(1, 10);
+        static void Main(string[] args)
+        {
+            // Створення об'єкту класу MyClass
+            MyClass myClass = new MyClass("Hello", 123, true, 4.56, 'A');
+
+            // Виклик методів, які використовуються для демонстрації роботи з Type, TypeInfo, MemberInfo, FieldInfo та MethodInfo
+            DisplayTypeInfo(myClass.GetType());
+            DisplayFieldInfo(myClass);
+            DisplayMethodInfo(myClass);
+        }
+
+        // Клас, який містить не менше 5 полів та не менше 3 методів
+        class MyClass
+        {
+            public string strField;
+            private int intField;
+            protected bool boolField;
+            internal double doubleField;
+            protected internal char charField;
+
+            public MyClass(string str, int i, bool b, double d, char c)
+            {
+                strField = str;
+                intField = i;
+                boolField = b;
+                doubleField = d;
+                charField = c;
+            }
+
+            public void Method1()
+            {
+                Console.WriteLine("Method1 is called.");
+            }
+
+            private void Method2()
+            {
+                Console.WriteLine("Method2 is called.");
+            }
+
+            protected void Method3()
+            {
+                Console.WriteLine("Method3 is called.");
+            }
+
+            public int Method4(string str)
+            {
+                Console.WriteLine("Method4 is called with parameter: " + str);
+                return str.Length;
+            }
+        }
+
+        // Метод, який виводить інформацію про клас за допомогою Type та TypeInfo
+        static void DisplayTypeInfo(Type type)
+        {
+            Console.WriteLine("Type name: " + type.Name);
+            Console.WriteLine("Full type name: " + type.FullName);
+            Console.WriteLine("Assembly name: " + type.Assembly.FullName);
+
+            TypeInfo typeInfo = type.GetTypeInfo();
+            Console.WriteLine("Is class public: " + typeInfo.IsPublic);
+            Console.WriteLine("Is class abstract: " + typeInfo.IsAbstract);
+            Console.WriteLine("Is class sealed: " + typeInfo.IsSealed);
+        }
+
+        // Метод, який виводить інформацію про поля класу за допомогою FieldInfo
+        static void DisplayFieldInfo(object obj)
+        {
+            Type type = obj.GetType();
+
+            foreach (FieldInfo fieldInfo in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                Console.WriteLine("Field name: " + fieldInfo.Name);
+                Console.WriteLine("Field type: " + fieldInfo.FieldType);
+                Console.WriteLine("Field value: " + fieldInfo.GetValue(obj));
+            }
+        }
+
+        // Метод, який викликає методи класу за допомогою MethodInfo
+        static void DisplayMethodInfo(object obj)
+        {
+            Type type = obj.GetType();
+            MethodInfo methodInfo = type.GetMethod("Method4");
+
+            object[] parameters = new object[] { "Hello, World!" };
+            int result = (int)methodInfo.Invoke(obj, parameters);
+
+            Console.WriteLine("Method4 result: " + result);
+        }
     }
-
-    int chunkSize = 100;
-    for (int i = 0; i < data.Length; i += chunkSize)
-    {
-        int[] chunk = new int[chunkSize];
-        Array.Copy(data, i, chunk, 0, chunkSize);
-        Thread thread = new Thread(ProcessData);
-        thread.Start(chunk);
-    }
-
-    Console.WriteLine("Processing finished.");
 }
-
-Mutex mutex = new Mutex();
-
-void UseMutexFunc(string message)
-{
-    mutex.WaitOne();
-    Console.WriteLine($"Mutex Thread {Thread.CurrentThread.ManagedThreadId} started.");
-    Thread.Sleep(2000);
-    Console.WriteLine($"Mutex Thread {Thread.CurrentThread.ManagedThreadId} finished. {message}");
-    mutex.ReleaseMutex();
-}
-
-void SynchronizedAccess()
-{
-    Console.WriteLine("Synchronized access started.");
-
-    // Симуляція декількох потоків, які одночасно працюють з одним mutex об'єктом
-    Thread[] threads = new Thread[5];
-    for (int i = 0; i < threads.Length; i++)
-    {
-        threads[i] = new Thread(() => UseMutexFunc($"Message {i}"));
-        threads[i].Start();
-    }
-
-    Console.WriteLine("Synchronized access finished.");
-}
-
-
-void Method1()
-{
-    Console.WriteLine("Thread 1 started");
-    Thread.Sleep(2000);
-    Console.WriteLine("Thread 1 ended");
-}
-
-void Method2(object obj)
-{
-    int number = (int)obj;
-    Console.WriteLine($"Thread 2 started with number {number}");
-    Thread.Sleep(3000);
-    Console.WriteLine($"Thread 2 ended with number {number}");
-}
-
-void Method3()
-{
-    Thread.CurrentThread.Name = "MyThread";
-    Console.WriteLine($"Thread {Thread.CurrentThread.Name} started");
-    Thread.Sleep(4000);
-    Console.WriteLine($"Thread {Thread.CurrentThread.Name} ended");
-}
-
-
-async Task Method1Async()
-{
-    Console.WriteLine("Method 1 started");
-    await Task.Delay(2000);
-    Console.WriteLine("Method 1 ended");
-}
-
-async Task Method2Async()
-{
-    Console.WriteLine("Method 2 started");
-    Task task1 = Task.Delay(3000);
-    Task task2 = Task.Delay(2000);
-    await Task.WhenAll(task1, task2);
-    Console.WriteLine("Method 2 ended");
-}
-
-async Task<int> Method3Async()
-{
-    Console.WriteLine("Method 3 started");
-    await Task.Delay(4000);
-    Console.WriteLine("Method 3 ended");
-    return 42;
-}
-
-void Main()
-{
-    Thread thread1 = new Thread(Method1);
-    Thread thread2 = new Thread(new ParameterizedThreadStart(Method2));
-    Thread thread3 = new Thread(Method3);
-
-    thread1.Start();
-    thread2.Start(42);
-    thread3.Start();
-
-    SynchronizedAccess();
-    ParallelProcessing();
-
-    Method1Async().Wait();
-    Method2Async().Wait();
-    int result = Method3Async().Result;
-    Console.WriteLine($"Method 3 returned {result}");
-}
-
-Main();
